@@ -1,0 +1,9 @@
+services:
+  audio-server:
+    build: .
+    container_name: m5stack-audio-server
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./uploads:/app/uploads
+    restart: always
