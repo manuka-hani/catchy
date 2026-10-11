@@ -8,9 +8,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # ソースコードのコピー
 COPY app.py .
+COPY features ./features
 
 # 保存先フォルダの作成
-RUN mkdir uploads
+RUN mkdir uploads texts
 
 # ポートの開放
 EXPOSE 5000

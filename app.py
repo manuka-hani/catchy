@@ -2,11 +2,15 @@ import os
 from datetime import datetime
 from flask import Flask, request, jsonify
 
+from features.speech_to_text import transcribe_and_save
+
 app = Flask(__name__)
 
-# 音声ファイルの保存先ディレクトリ
+# 音声ファイルと文字起こし結果の保存先
 UPLOAD_FOLDER = './uploads'
+TEXT_FOLDER = './texts'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(TEXT_FOLDER, exist_ok=True)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -25,7 +29,14 @@ def upload_file():
             f.write(request.data)
 
         print(f"Saved: {file_path} ({len(request.data)} bytes)")
-        return jsonify({"status": "success", "message": f"Saved as {filename}"}), 200
+        txt_filename = f"{timestamp}.txt"
+        text = transcribe_and_save(file_path, TEXT_FOLDER, txt_filename)
+        return jsonify({
+            "status": "success",
+            "message": f"Saved as {filename}",
+            "text": text,
+            "text_file": txt_filename,
+        }), 200
 
     except Exception as e:
         print(f"Error saving file: {e}")

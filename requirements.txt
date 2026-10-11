@@ -1,1 +1,8 @@
 Flask==3.0.3
+faster-whisper==1.2.1
+ctranslate2>=4.0,<5
+huggingface-hub>=0.21
+tokenizers>=0.13,<1
+onnxruntime>=1.14,<2
+av>=11
+tqdm
