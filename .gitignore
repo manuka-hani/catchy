@@ -1,0 +1,15 @@
+# 秘密情報
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# 実行時の生成物
+output/
+uploads/
+texts/
+input_audio/*.wav

@@ -1,0 +1,23 @@
+{
+  "type": "research_request",
+  "version": "1.0",
+  "created_at": "2026-10-12T02:30:00+09:00",
+  "request": {
+    "original_transcription": "Aと、AIエジェントについて、最近の情報をモーラ的に調査してください。",
+    "corrected_transcription": "AIエージェントについて、最近の情報を網羅的に調査してください。",
+    "normalized_query": "AIエージェントに関する最新動向を網羅的に調査する",
+    "intent": "research"
+  },
+  "research": {
+    "topic": "AIエージェント",
+    "scope": "最新動向",
+    "time_range": "recent",
+    "time_range_note": null,
+    "depth": "quick",
+    "search_targets": ["AI agent", "AI agents", "AIエージェント", "agentic AI"],
+    "key_questions": ["直近の主要な発表は何か", "開発者・ユーザーの反応はどうか", "課題は何か"],
+    "comparison_targets": [],
+    "preferred_sources": []
+  },
+  "output": {"format": "pdf", "language": "ja"}
+}

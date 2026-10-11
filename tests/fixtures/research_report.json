@@ -1,0 +1,21 @@
+{
+  "title": "AIエージェント 最新動向レポート",
+  "topic": "AIエージェント",
+  "overview": "公式ブログ、GitHub、Reddit、Zenn などを対象に、直近の AI エージェント関連の動向を調査した。",
+  "executive_summary": "AIエージェントは実運用段階に入りつつある [1]。一方で、コストと信頼性への懸念がコミュニティで繰り返し議論されている [2][3]。",
+  "key_findings": ["主要ベンダーがエージェント SDK を相次いで公開 [1]", "**現場**では権限管理が課題として挙がっている [2]"],
+  "sections": [
+    {"heading": "最新動向", "paragraphs": ["各社がエージェント機能を強化している [1]。長い段落の折り返しを確認するためのテキストです。日本語の文章が正しく折り返されることを確認します。ExtremelyLongEnglishWordWithoutAnySpacesToCheckCharacterWrappingBehaviourInsideThePdfGenerator。"], "bullets": ["SDK の公開 [1]", "MCP 対応の拡大 [1]"]},
+    {"heading": "ユーザーの反応", "paragraphs": ["Reddit では期待と懐疑が混在している [2]。"], "bullets": []}
+  ],
+  "important_facts": [{"statement": "SDK が一般公開された [1]", "classification": "FACT", "source_ids": [1]}],
+  "notable_opinions": [{"statement": "コストが高すぎるという声がある [2]", "classification": "USER_REPORT", "source_ids": [2]}],
+  "analysis": "公式発表は生産性向上を強調する一方、ユーザーは運用コストを懸念している [1][2]。\n今後は権限管理の標準化が進むと推測される。",
+  "conclusion": "導入は進んでいるが、評価は分かれている。",
+  "sources": [
+    {"id": 1, "title": "Agent SDK overview", "url": "https://example.com/docs/agent-sdk/overview?with=a-very-long-query-string-to-check-url-wrapping-in-the-pdf", "source_type": "official_docs", "publisher": "Example Inc.", "published_date": "2026-09-01", "accessed_date": "2026-10-12", "reliability": "high"},
+    {"id": 2, "title": "Reddit スレッド", "url": "https://www.reddit.com/r/example/comments/abc", "source_type": "reddit", "publisher": "r/example", "published_date": null, "accessed_date": "2026-10-12", "reliability": "low"},
+    {"id": 3, "title": "Zenn 記事", "url": "https://zenn.dev/example/articles/xyz", "source_type": "zenn", "publisher": "Zenn", "published_date": "2026-08-20", "accessed_date": "2026-10-12", "reliability": "medium"}
+  ],
+  "research_notes": {"search_queries": ["AI agent 2026", "site:reddit.com AI agents"], "limitations": "X の投稿は検索結果からのみ確認した。"}
+}

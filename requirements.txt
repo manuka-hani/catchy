@@ -6,3 +6,12 @@ tokenizers>=0.13,<1
 onnxruntime>=1.14,<2
 av>=11
 tqdm
+
+# research pipeline (src/)
+claude-agent-sdk>=0.2.165
+google-genai>=2.29.0
+pydantic>=2.10
+python-dotenv>=1.0
+fpdf2>=2.8.9
+requests>=2.32
+pytest>=8
