@@ -39,7 +39,7 @@ Discord Webhook                     src/notify/
 | `src/pdf/` | `ResearchReport` → 日本語 PDF |
 | `src/notify/` | Discord Webhook への PDF 送信 |
 | `src/schemas/` | 上記すべての JSON スキーマ (Pydantic) |
-| `app.py`, `features/` | M5Stack から WAV を受け取る既存のアップロードサーバー |
+| `app.py` | M5Stack から WAV を受け取り、調査パイプラインをバックグラウンドで開始する |
 
 ### 役割分担
 
@@ -81,7 +81,7 @@ Claude Agent SDK には Claude Code CLI が同梱されているため、別途�
 |---|---|---|
 | `GEMINI_API_KEY` | ○ | [Google AI Studio](https://aistudio.google.com/apikey) で発行します |
 | `DISCORD_WEBHOOK_URL` | ○ | `--no-discord` を付けて実行する場合は不要です |
-| `ANTHROPIC_API_KEY` | △ | [Claude Console](https://console.anthropic.com/) で発行します。未設定の場合は、この PC でログイン済みの Claude Code (`claude` コマンド) の認証情報を使います |
+| `CLAUDE_CODE_OAUTH_TOKEN` | △ | 手元で `claude setup-token` を実行して得るトークンです。未設定の場合は、この PC でログイン済みの Claude Code (`claude` コマンド) の認証情報を使います |
 | `GEMINI_MODEL` | | 既定値は `gemini-3.8-flash` |
 | `CLAUDE_MODEL` | | 空の場合は Claude Code の既定モデルを使います |
 | `CLAUDE_MAX_TURNS` / `CLAUDE_MAX_BUDGET_USD` / `CLAUDE_TIMEOUT_SEC` | | 調査量・コスト・時間の上限 |
@@ -90,6 +90,21 @@ Claude Agent SDK には Claude Code CLI が同梱されているため、別途�
 | `OUTPUT_DIR` | | 既定値は `./output` |
 
 `.env` は `.gitignore` に入っているため、Git にはコミットされません。
+
+## Docker
+
+```bash
+cp .env.example .env   # 値を編集する
+docker compose up --build
+```
+
+`POST /upload` で WAV を受け取ると、すぐ応答を返してからコンテナ内で調査パイプラインを実行します。結果の PDF は `./output/` と Discord に出ます。Whisper のモデルは名前付きボリュームにキャッシュします。
+
+コンテナ内で CLI を使う場合:
+
+```bash
+docker compose run --rm audio-server python -m src.main /app/uploads/audio.wav --source m5stack
+```
 
 ## 実行方法
 
@@ -188,7 +203,7 @@ python -m pytest
 | `ステップ 'stt' で失敗しました: 音声のデコード/文字起こしに失敗しました` | WAV が壊れていないか確認してください。M5Stack から送る場合は、WAV ヘッダが正しく付いているか確認してください |
 | `Whisper モデル 'small' のロードに失敗しました` | 初回のモデルダウンロードにはネットワーク接続が必要です |
 | `Gemini モデル '...' が見つかりません` | `GEMINI_MODEL` を[利用可能なモデル](https://ai.google.dev/gemini-api/docs/models)に変更してください |
-| `ステップ 'research' で失敗しました: Claude の認証に失敗しました` | `ANTHROPIC_API_KEY` を設定するか、`claude` コマンドでログインしてください |
+| `ステップ 'research' で失敗しました: Claude の認証に失敗しました` | `CLAUDE_CODE_OAUTH_TOKEN` を設定するか、`claude` コマンドでログインしてください |
 | `最大ターン数に達し…` | `CLAUDE_MAX_TURNS` を増やしてください |
 | 調査がタイムアウトする | `CLAUDE_TIMEOUT_SEC` を増やすか、依頼の depth を下げてください |
 | `日本語フォントが見つかりません` | `PDF_FONT_PATH` にフォントのパスを指定してください |
@@ -196,27 +211,10 @@ python -m pytest
 
 失敗したステップ名はログに `ステップ '<step>' で失敗しました` の形で出ます。終了コードは 1 です。詳細を見たい場合は `-v` を付けて実行してください。
 
-## 将来の M5Stack 接続
+## M5Stack 接続
 
-入力インターフェースと処理本体は分離してあります。どの入口からでも、`src.pipeline.Pipeline` の次のメソッドを呼ぶだけで、同じパイプラインに流せます。
-
-```python
-from src.config import load_settings
-from src.pipeline import Pipeline
-
-pipeline = Pipeline(load_settings(), run_name="audio_20261011_224630")
-pipeline.run_from_audio("uploads/audio_20261011_224630.wav", source_type="m5stack")
-# テキストなら pipeline.run_from_text(...)、構造化済みなら pipeline.run_from_request(...)
-```
-
-既存の `app.py` (`POST /upload` で WAV を受け取る Flask サーバー) から接続する手順は次のとおりです。
+`app.py` の `POST /upload` が WAV を保存し、調査を 1 本のワーカーに積みます。HTTP の応答は保存直後に返します。結果は Discord と `output/<run_name>/` に出ます。
 
 ```text
-M5Stack Core2 ──(LAN, POST /upload, audio/wav)──▶ PC: app.py ──▶ Pipeline.run_from_audio(...)
+M5Stack Core2 ──(LAN, POST /upload, audio/wav)──▶ app.py ──▶ Pipeline.run_from_audio(...)
 ```
-
-1. `app.py` の `/upload` で WAV を保存した後に、`Pipeline(...).run_from_audio(file_path, source_type="m5stack")` を呼びます
-2. 調査には時間がかかるため、HTTP レスポンスは先に返し、パイプラインはバックグラウンドのスレッドかキューで実行します
-3. 結果は Discord に届くため、M5Stack 側は「受け付けました」の表示だけで十分です
-
-現時点の `app.py` は、文字起こしを TXT で保存するところまでを担当しています。

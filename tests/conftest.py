@@ -17,7 +17,7 @@ def fixtures() -> Path:
 @pytest.fixture
 def settings(tmp_path, monkeypatch):
     # 実環境の .env / 環境変数に影響されないようにする
-    for key in ("GEMINI_API_KEY", "DISCORD_WEBHOOK_URL", "ANTHROPIC_API_KEY", "OUTPUT_DIR"):
+    for key in ("GEMINI_API_KEY", "DISCORD_WEBHOOK_URL", "CLAUDE_CODE_OAUTH_TOKEN", "OUTPUT_DIR"):
         monkeypatch.delenv(key, raising=False)
     s = load_settings(env_file=tmp_path / "nonexistent.env")
     return replace(

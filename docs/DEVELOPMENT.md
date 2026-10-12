@@ -91,11 +91,11 @@ catchy/
 ├── .gitignore                 .env / output/ / .venv/ / WAV などを除外する
 ├── requirements.txt           依存ライブラリ。既存サーバー用と src/ 用の両方を含む
 │
-├── app.py                     【既存】M5Stack からの WAV を受け取る Flask サーバー
+├── app.py                     M5Stack からの WAV を受け、調査をバックグラウンドで開始する
 ├── features/
-│   └── speech_to_text.py      【既存】WAV を TXT に保存する文字起こし (app.py が使う)
-├── Dockerfile                 【既存】app.py 用。src/ は含まない
-├── docker-compose.yml         【既存】app.py 用
+│   └── speech_to_text.py      【旧】WAV を TXT に保存する文字起こし。アップロード処理では使わない
+├── Dockerfile                 調査パイプライン込みのイメージ
+├── docker-compose.yml         .env と output/、Whisper キャッシュを渡して app.py を起動する
 │
 ├── src/                       調査パイプライン本体
 │   ├── main.py                CLI エントリポイント (python -m src.main)
@@ -491,8 +491,7 @@ BIZ UDゴシック (の ttc の 0 番) は等幅で、英字が読みにくく�
 | `GEMINI_MODEL` | `gemini-3.8-flash` | request_builder | 使う Flash 系のモデル名 |
 | `GEMINI_TIMEOUT_SEC` | `120` | request_builder | 1 リクエストあたりのタイムアウト |
 | `DISCORD_WEBHOOK_URL` | (必須*) | notify | `--no-discord` のときは不要 |
-| `ANTHROPIC_API_KEY` | 空 | research (SDK が読む) | API 従量課金で使う場合に設定する。8 章を参照 |
-| `CLAUDE_CODE_OAUTH_TOKEN` | 空 | research (SDK が読む) | サブスク枠で動かすための長期トークン。8 章を参照 |
+| `CLAUDE_CODE_OAUTH_TOKEN` | 空 | research (SDK が読む) | `claude setup-token` で発行するサブスク用トークン。8 章を参照 |
 | `CLAUDE_MODEL` | 空 (CLI の既定) | research | 使う Claude のモデル |
 | `CLAUDE_MAX_TURNS` | `80` | research | エージェントループの最大ターン数 |
 | `CLAUDE_MAX_BUDGET_USD` | 空 (無制限) | research | 1 回の調査の費用上限 |
@@ -523,17 +522,12 @@ BIZ UDゴシック (の ttc の 0 番) は等幅で、英字が読みにくく�
 Agent SDK は同梱の Claude Code CLI をサブプロセスとして起動します。認証は CLI が環境変数とログイン情報から解決します。
 アプリ側で認証を扱うコードはありません。`load_dotenv()` が `.env` の値を `os.environ` に入れ、子プロセスがそれを引き継ぐだけです。
 
-CLI は次の優先順で認証情報を選びます (抜粋)。
+認証には `CLAUDE_CODE_OAUTH_TOKEN` を使います。`claude setup-token` で発行する 1 年有効のトークンで、Pro / Max のサブスク枠を使います。未設定のときは、`claude` で `/login` した保存済み認証情報 (`~/.claude/.credentials.json`) が使われます。
 
-1. `ANTHROPIC_API_KEY`: API の従量課金
-2. `CLAUDE_CODE_OAUTH_TOKEN`: `claude setup-token` で発行する 1 年有効のトークン。Pro / Max のサブスク枠を使う
-3. `claude` で `/login` したときの保存済み認証情報 (`~/.claude/.credentials.json`)
-
-| 実行環境 | 推奨する設定 |
+| 実行環境 | 設定 |
 |---|---|
-| 手元の PC (`claude` でログイン済み) | 何も設定しなくてよい (3 が使われる) |
-| サーバー、Docker、CI (サブスク枠で動かす) | 手元で `claude setup-token` を実行し、表示されたトークンをサーバーの `.env` に `CLAUDE_CODE_OAUTH_TOKEN=...` として書く。`ANTHROPIC_API_KEY` の行は消す (残っているとそちらが優先される) |
-| 従量課金で動かす | `ANTHROPIC_API_KEY` を設定する |
+| 手元の PC (`claude` でログイン済み) | 未設定でよい |
+| サーバー、Docker、CI | 手元で `claude setup-token` を実行し、表示されたトークンを `.env` の `CLAUDE_CODE_OAUTH_TOKEN` に書く |
 
 サブスク認証は、個人用ツールとして使う前提のものです。
 このガジェットを他の人にも使わせる場合は、API キー方式に切り替えてください。
@@ -736,20 +730,11 @@ def start_research(wav_path: str, run_name: str) -> None:
 | 役割 | M5Stack から WAV を受け取り、TXT に文字起こしする | 文字起こしから PDF の Discord 送信まで |
 | 文字起こしの出力 | `texts/*.txt` (テキストのみ) | `transcription.json` (セグメントやメタ情報付き) |
 | Whisper モデル | `features/` 内で別にキャッシュ | `src/stt/` 内でキャッシュ |
-| Docker | `Dockerfile` / `docker-compose.yml` が対応 | 未対応 |
+| Docker | `docker compose up --build` で `src/` 込みのサーバーが起動する | 同じイメージで実行する |
 
-既存のコードは、仕様の方針に従って変更していません。M5Stack とつなぐ段階で、次のどちらかを選んでください。
+`app.py` は WAV を保存したあと、13.1 節の通り 1 本のワーカーで `Pipeline.run_from_audio(..., source_type="m5stack")` を実行する。文字起こしは `src/stt` が行い、`features/speech_to_text.py` は使わない。
 
-- **A. app.py から `src` を呼ぶ** (13.1 節)。`features/speech_to_text.py` は不要になります
-- **B. app.py は WAV の保存だけにする**。別のプロセスが `uploads/` を監視して `python -m src.main` を実行します
-
-### Docker で動かす場合の追加作業
-
-- `Dockerfile` に `COPY src ./src` を追加する
-- 日本語フォントを入れる: `apt-get install -y fonts-noto-cjk`
-- 環境変数を渡す (`env_file: .env`)
-- `output/` と、Whisper のモデルキャッシュ (`~/.cache/huggingface`) をボリュームにする
-- Claude の認証は `CLAUDE_CODE_OAUTH_TOKEN` か `ANTHROPIC_API_KEY` で渡す (8 章)
+Docker イメージには `src/`、日本語フォント (`fonts-noto-cjk` と `fonts-ipafont-gothic`)、`ffmpeg`、`libgomp1` が入っている。`docker-compose.yml` は `.env` を渡し、`./output` と Whisper のモデルキャッシュ (`HF_HOME=/cache/huggingface`) をボリュームにする。Claude の認証は `.env` の `CLAUDE_CODE_OAUTH_TOKEN` で渡す (8 章)。
 
 ---
 

@@ -165,8 +165,8 @@ class Pipeline:
             self.settings.require_gemini()
         if self.send_discord:
             self.settings.require_discord()
-        if not self.settings.anthropic_api_key:
-            logger.info("ANTHROPIC_API_KEY 未設定: Claude Code CLI のログイン情報で認証します")
+        if not self.settings.claude_code_oauth_token:
+            logger.info("CLAUDE_CODE_OAUTH_TOKEN 未設定: Claude Code CLI のログイン情報で認証します")
 
     def _cached(self, path: Path, model, step: str):
         if not (self.resume and path.exists()):

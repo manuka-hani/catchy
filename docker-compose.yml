@@ -4,7 +4,16 @@ services:
     container_name: m5stack-audio-server
     ports:
       - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      OUTPUT_DIR: /app/output
+      HF_HOME: /cache/huggingface
     volumes:
       - ./uploads:/app/uploads
-      - ./texts:/app/texts
+      - ./output:/app/output
+      - huggingface:/cache/huggingface
     restart: always
+
+volumes:
+  huggingface:

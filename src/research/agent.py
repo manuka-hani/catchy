@@ -82,7 +82,7 @@ def _raise_for_result(result) -> None:
                             hint="しばらく待ってから再実行してください")
     if status in (401, 403):
         raise PipelineError(STEP, f"Claude の認証に失敗しました: {errors}",
-                            hint="ANTHROPIC_API_KEY を確認するか、`claude` CLI でログインしてください")
+                            hint="CLAUDE_CODE_OAUTH_TOKEN を確認するか、`claude` CLI でログインしてください")
     if result.subtype == "error_max_turns":
         raise PipelineError(STEP, f"最大ターン数 ({result.num_turns}) に達し、レポートを完成できませんでした",
                             hint="CLAUDE_MAX_TURNS を増やして再実行してください")

@@ -44,7 +44,7 @@ class Settings:
     gemini_timeout_sec: int
 
     # Claude Agent SDK
-    anthropic_api_key: str
+    claude_code_oauth_token: str
     claude_model: str | None
     claude_max_turns: int
     claude_max_budget_usd: float | None
@@ -89,7 +89,7 @@ def load_settings(env_file: str | os.PathLike | None = None) -> Settings:
         gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
         gemini_model=os.getenv("GEMINI_MODEL", "").strip() or "gemini-3.8-flash",
         gemini_timeout_sec=_int_env("GEMINI_TIMEOUT_SEC", 120),
-        anthropic_api_key=os.getenv("ANTHROPIC_API_KEY", "").strip(),
+        claude_code_oauth_token=os.getenv("CLAUDE_CODE_OAUTH_TOKEN", "").strip(),
         claude_model=os.getenv("CLAUDE_MODEL", "").strip() or None,
         claude_max_turns=_int_env("CLAUDE_MAX_TURNS", 80),
         claude_max_budget_usd=_float_env("CLAUDE_MAX_BUDGET_USD", None),

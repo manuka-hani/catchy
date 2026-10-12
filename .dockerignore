@@ -1,0 +1,10 @@
+.git
+.venv
+venv
+output
+uploads
+texts
+**/__pycache__
+.pytest_cache
+*.wav
+.env
